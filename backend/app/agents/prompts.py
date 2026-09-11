@@ -1,54 +1,97 @@
-"""Prompts for Claude AI Agent"""
+"""Prompts for Claude AI Agent - FULLY IMPLEMENTED"""
 
 SYSTEM_PROMPT = """
 You are an expert financial analyst and investment advisor with deep knowledge of:
-- Fundamental analysis (P/E ratios, EPS, Revenue growth, Debt ratios, etc.)
-- Technical analysis (Moving averages, RSI, MACD, Support/Resistance levels)
+- Fundamental analysis (P/E ratios, EPS, Revenue growth, Debt ratios, ROE, ROA, etc.)
+- Technical analysis (Moving averages, RSI, MACD, Support/Resistance levels, Bollinger Bands)
 - Market sentiment and news analysis
 - Risk assessment and portfolio management
+- Market trends and economic indicators
 
-Your task is to provide comprehensive stock analysis and actionable investment signals.
+Your task is to provide comprehensive, actionable stock analysis with clear buy/sell recommendations.
+
 Always consider:
 1. Company fundamentals and growth prospects
-2. Technical setup and price action
-3. Market sentiment and recent news
-4. Risk/reward ratios
-5. Entry and exit points
+2. Technical setup and price action momentum
+3. Market sentiment and recent news catalysts
+4. Risk/reward ratios and entry/exit points
+5. Comparison with historical levels and industry peers
 
-Provide clear reasoning for your conclusions and always mention key risks.
+Provide clear, concise reasoning for your conclusions. Be specific with numbers and metrics.
+Always mention key risks and potential catalysts.
+Format your final recommendation as a structured JSON object.
 """
 
 ANALYSIS_PROMPT = """
-Please analyze the following stock for investment opportunity:
+Please provide a comprehensive investment analysis for the following stock:
 
-Stock: {symbol}
+Stock Symbol: {symbol}
 
-Context:
+Market Data and Metrics:
 {context}
 
-Detailed Analysis: {detailed}
+Detailed Analysis Requested: {detailed}
 
-Provide:
-1. Executive Summary (2-3 sentences)
-2. Fundamental Analysis (strength/weakness)
-3. Technical Analysis (current setup)
-4. Sentiment Analysis (market sentiment)
-5. Buy Signal Assessment (BUY/HOLD/SELL with confidence 0-100)
-6. Entry Price Recommendation
-7. Target Price (6-12 month outlook)
-8. Stop Loss Level
-9. Key Risks
-10. Key Catalysts
+Please analyze the stock and provide:
 
-Format your response as structured JSON at the end.
+1. **Executive Summary** (2-3 sentences capturing the investment thesis)
+
+2. **Fundamental Analysis**
+   - Valuation assessment (undervalued/fair/overvalued)
+   - Growth prospects and trends
+   - Company financial health
+   - Strengths and weaknesses
+
+3. **Technical Analysis**
+   - Current price setup (trend, momentum, breakout potential)
+   - Key support and resistance levels
+   - Risk/reward setup
+   - Time frame for potential move
+
+4. **Sentiment Analysis**
+   - Market sentiment interpretation
+   - Recent news impact
+   - Upcoming catalysts or risks
+
+5. **Investment Recommendation**
+   - Clear BUY/SELL/HOLD recommendation
+   - Confidence level (0-100%)
+   - Ideal entry price
+   - Target price (3-6 month outlook)
+   - Stop loss level for risk management
+
+6. **Risk Assessment**
+   - Key risks to the thesis
+   - Worst-case scenario
+   - Hedging strategies if applicable
+
+7. **Key Catalysts**
+   - Upcoming events that could move the stock
+   - Earnings dates, product launches, regulatory decisions
+
+End your response with a JSON block containing the structured recommendation:
+{{
+    "symbol": "{symbol}",
+    "recommendation": "BUY|SELL|HOLD",
+    "confidence": 0.0-1.0,
+    "entry_price": number,
+    "target_price": number,
+    "stop_loss": number,
+    "time_frame": "3-6 months",
+    "reasoning": "brief summary of the investment case",
+    "key_risks": ["risk1", "risk2", "risk3"],
+    "upside_catalysts": ["catalyst1", "catalyst2"],
+    "downside_risks": ["risk1", "risk2"]
+}}
 """
 
-BUY_SIGNAL_PROMPT = """
-Based on the following analysis, generate a buy/sell signal:
+SIGNAL_EXTRACTION_PROMPT = """
+From the following stock analysis for {symbol}, extract a structured trading signal.
 
+Analysis:
 {analysis}
 
-Respond with a JSON object containing:
+Extract and format as JSON:
 {{
     "symbol": "{symbol}",
     "signal_strength": "strong_buy|buy|hold|sell|strong_sell",
@@ -56,8 +99,11 @@ Respond with a JSON object containing:
     "entry_price": number,
     "target_price": number,
     "stop_loss": number,
-    "reasoning": "string",
-    "risk_factors": ["string"],
-    "positive_factors": ["string"]
+    "reasoning": "clear explanation of the signal",
+    "key_factors": ["factor1", "factor2"],
+    "risk_factors": ["risk1", "risk2"],
+    "time_horizon_days": number
 }}
+
+IMPORTANT: Return ONLY the JSON object, no additional text.
 """
