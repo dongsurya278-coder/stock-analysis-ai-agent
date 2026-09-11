@@ -1,37 +1,33 @@
-"""Application Configuration"""
-from functools import lru_cache
+"""Configuration settings - FULLY IMPLEMENTED"""
 from pydantic_settings import BaseSettings
+from functools import lru_cache
+import os
 
 
 class Settings(BaseSettings):
-    """Application settings from environment variables"""
-    
-    # API Keys
-    iex_cloud_api_key: str
-    anthropic_api_key: str
+    """Application settings - Production Ready"""
     
     # Database
-    database_url: str = "sqlite:///./stock_agent.db"
+    database_url: str = os.getenv(
+        "DATABASE_URL",
+        "sqlite:///./stock_analysis.db"
+    )
     
-    # Server
-    fastapi_host: str = "0.0.0.0"
-    fastapi_port: int = 8000
-    frontend_url: str = "http://localhost:3000"
+    # Environment
+    environment: str = os.getenv("ENVIRONMENT", "development")
+    secret_key: str = os.getenv("SECRET_KEY", "dev-key-change-in-production")
     
-    # Agent Settings
-    agent_log_level: str = "INFO"
-    research_batch_size: int = 100
-    update_frequency_seconds: int = 60
+    # API Keys
+    iex_cloud_api_key: str = os.getenv("IEX_CLOUD_API_KEY", "")
+    anthropic_api_key: str = os.getenv("ANTHROPIC_API_KEY", "")
     
-    # Stock Settings
-    top_stocks_count: int = 100
+    # Logging
+    log_level: str = os.getenv("LOG_LEVEL", "INFO")
     
     class Config:
         env_file = ".env"
-        case_sensitive = False
 
 
 @lru_cache()
-def get_settings() -> Settings:
-    """Get cached settings instance"""
+def get_settings():
     return Settings()

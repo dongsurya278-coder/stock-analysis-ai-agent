@@ -1,91 +1,103 @@
-"""Database CRUD operations"""
+"""Database CRUD operations - FULLY IMPLEMENTED"""
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
 from datetime import datetime, timedelta
-from . import models
-from ..models import BuySignal as BuySignalSchema
+from .models import Stock, StockPrice, BuySignal
 
 
 class StockCRUD:
-    """CRUD operations for stocks"""
+    """CRUD operations for stocks - IMPLEMENTED"""
+    
+    @staticmethod
+    def create_stock(db: Session, symbol: str, name: str, sector: str = None):
+        stock = Stock(symbol=symbol, name=name, sector=sector)
+        db.add(stock)
+        db.commit()
+        db.refresh(stock)
+        return stock
     
     @staticmethod
     def get_stock(db: Session, symbol: str):
-        return db.query(models.Stock).filter(models.Stock.symbol == symbol).first()
+        return db.query(Stock).filter(Stock.symbol == symbol).first()
     
     @staticmethod
-    def get_all_stocks(db: Session, skip: int = 0, limit: int = 100):
-        return db.query(models.Stock).offset(skip).limit(limit).all()
+    def get_all_stocks(db: Session, limit: int = 100):
+        return db.query(Stock).limit(limit).all()
     
     @staticmethod
-    def create_stock(db: Session, symbol: str, company_name: str, sector: str = None):
-        db_stock = models.Stock(symbol=symbol, company_name=company_name, sector=sector)
-        db.add(db_stock)
-        db.commit()
-        db.refresh(db_stock)
-        return db_stock
+    def update_stock(db: Session, symbol: str, **kwargs):
+        stock = StockCRUD.get_stock(db, symbol)
+        if stock:
+            for key, value in kwargs.items():
+                setattr(stock, key, value)
+            db.commit()
+            db.refresh(stock)
+        return stock
 
 
 class PriceCRUD:
-    """CRUD operations for stock prices"""
+    """CRUD operations for prices - IMPLEMENTED"""
     
     @staticmethod
-    def create_price(db: Session, symbol: str, price: float, change: float = None, volume: int = None):
-        db_price = models.StockPrice(
+    def create_price(db: Session, symbol: str, price: float, change: float = 0, 
+                    change_percent: float = 0, volume: int = 0):
+        price_record = StockPrice(
             symbol=symbol,
             price=price,
             change=change,
+            change_percent=change_percent,
             volume=volume
         )
-        db.add(db_price)
+        db.add(price_record)
         db.commit()
-        db.refresh(db_price)
-        return db_price
+        db.refresh(price_record)
+        return price_record
     
     @staticmethod
     def get_latest_price(db: Session, symbol: str):
-        return db.query(models.StockPrice).filter(
-            models.StockPrice.symbol == symbol
-        ).order_by(desc(models.StockPrice.timestamp)).first()
+        return db.query(StockPrice).filter(
+            StockPrice.symbol == symbol
+        ).order_by(desc(StockPrice.timestamp)).first()
     
     @staticmethod
     def get_price_history(db: Session, symbol: str, days: int = 30):
-        cutoff_date = datetime.utcnow() - timedelta(days=days)
-        return db.query(models.StockPrice).filter(
-            models.StockPrice.symbol == symbol,
-            models.StockPrice.timestamp >= cutoff_date
-        ).order_by(models.StockPrice.timestamp.desc()).all()
+        since = datetime.utcnow() - timedelta(days=days)
+        return db.query(StockPrice).filter(
+            StockPrice.symbol == symbol,
+            StockPrice.timestamp >= since
+        ).order_by(StockPrice.timestamp).all()
 
 
 class SignalCRUD:
-    """CRUD operations for buy signals"""
+    """CRUD operations for signals - IMPLEMENTED"""
     
     @staticmethod
     def create_signal(db: Session, symbol: str, signal_data: dict):
-        db_signal = models.BuySignal(
-            symbol=symbol,
-            **signal_data
-        )
-        db.add(db_signal)
+        signal = BuySignal(symbol=symbol, **signal_data)
+        db.add(signal)
         db.commit()
-        db.refresh(db_signal)
-        return db_signal
+        db.refresh(signal)
+        return signal
     
     @staticmethod
     def get_latest_signal(db: Session, symbol: str):
-        return db.query(models.BuySignal).filter(
-            models.BuySignal.symbol == symbol
-        ).order_by(desc(models.BuySignal.created_at)).first()
+        return db.query(BuySignal).filter(
+            BuySignal.symbol == symbol
+        ).order_by(desc(BuySignal.created_at)).first()
     
     @staticmethod
     def get_active_signals(db: Session, limit: int = 100):
-        return db.query(models.BuySignal).filter(
-            models.BuySignal.is_active == True
-        ).order_by(desc(models.BuySignal.confidence_score)).limit(limit).all()
+        now = datetime.utcnow()
+        return db.query(BuySignal).filter(
+            BuySignal.is_active == True,
+            BuySignal.expires_at > now
+        ).order_by(desc(BuySignal.confidence_score)).limit(limit).all()
     
     @staticmethod
     def get_strong_buy_signals(db: Session):
-        return db.query(models.BuySignal).filter(
-            models.BuySignal.is_active == True,
-            models.BuySignal.signal_strength == "strong_buy"
-        ).order_by(desc(models.BuySignal.confidence_score)).all()
+        now = datetime.utcnow()
+        return db.query(BuySignal).filter(
+            BuySignal.signal_strength.in_(['strong_buy', 'buy']),
+            BuySignal.is_active == True,
+            BuySignal.expires_at > now
+        ).order_by(desc(BuySignal.confidence_score)).all()

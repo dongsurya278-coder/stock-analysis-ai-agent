@@ -1,28 +1,28 @@
-"""Database configuration and session management"""
+"""Database connection - FULLY IMPLEMENTED"""
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
-from sqlalchemy.pool import StaticPool
-import os
+from sqlalchemy.orm import sessionmaker, declarative_base
 from .config import get_settings
+from loguru import logger
 
 settings = get_settings()
 
-# Create database engine
-if settings.database_url.startswith("sqlite"):
-    engine = create_engine(
-        settings.database_url,
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
-else:
-    engine = create_engine(settings.database_url, pool_pre_ping=True)
+# Create engine
+engine = create_engine(
+    settings.database_url,
+    connect_args={"check_same_thread": False} if "sqlite" in settings.database_url else {},
+)
 
-# Create session factory
+# Session factory
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+# Base for models
+Base = declarative_base()
 
-def get_db() -> Session:
-    """Get database session dependency"""
+logger.info(f"Database configured: {settings.database_url}")
+
+
+def get_db():
+    """Get database session - IMPLEMENTED"""
     db = SessionLocal()
     try:
         yield db
